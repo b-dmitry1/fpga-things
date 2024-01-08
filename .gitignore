@@ -1,0 +1,13 @@
+*.o
+*.a
+*.bin
+*.hex
+*.mif
+*.exe
+*.bak
+**/db
+**/greybox_tmp
+**/incremental_db
+**/output_files
+*.asm
+*.out
