@@ -216,6 +216,8 @@ localparam
 
 reg  [3:0] state;
 
+wire [31:0] store_addr = r1 + s_imm;
+
 always @ (posedge clk or posedge rst)
 begin
     if (rst)
@@ -351,18 +353,18 @@ begin
                 case (func3)
                     3'b000:
                     begin
-                        lane[0] <= addr[1:0] == 2'b00;
-                        lane[1] <= addr[1:0] == 2'b01;
-                        lane[2] <= addr[1:0] == 2'b10;
-                        lane[3] <= addr[1:0] == 2'b11;
+                        lane[0] <= store_addr[1:0] == 2'b00;
+                        lane[1] <= store_addr[1:0] == 2'b01;
+                        lane[2] <= store_addr[1:0] == 2'b10;
+                        lane[3] <= store_addr[1:0] == 2'b11;
                         dout <= {4{r2[7:0]}};
                     end
                     3'b001:
                     begin
-                        lane[0] <= addr[1] == 1'b0;
-                        lane[1] <= addr[1] == 1'b0;
-                        lane[2] <= addr[1] == 1'b1;
-                        lane[3] <= addr[1] == 1'b1;
+                        lane[0] <= store_addr[1] == 1'b0;
+                        lane[1] <= store_addr[1] == 1'b0;
+                        lane[2] <= store_addr[1] == 1'b1;
+                        lane[3] <= store_addr[1] == 1'b1;
                         dout <= {2{r2[15:0]}};
                     end
                     3'b010:
@@ -372,7 +374,7 @@ begin
                     end
                 endcase
                 // Begin write
-                addr <= r1 + s_imm;
+                addr <= store_addr;
                 wr <= 1;
                 valid <= 1;
                 state <= S_WRITE_WAIT;

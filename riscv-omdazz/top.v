@@ -1,11 +1,14 @@
 module top
 (
-	input wire clk,
-	input wire rst_n,
+	input  wire       clk,
+	input  wire       rst_n,
 
-	output reg [3:0] led,
-	output reg [3:0] dig,
-	output reg [7:0] seg
+	output reg  [3:0] led,
+	output reg  [3:0] dig,
+	output reg  [7:0] seg,
+	
+	output wire       txd,
+	input  wire       rxd
 );
 
 wire [31:0] addr;
@@ -33,12 +36,23 @@ wire [31:0] sram_dout;
 reg sram_wr;
 sram i_sram
 (
-    .clock(clk),
-	 .data_a(din),
-	 .address_a(addr[13:2]),
-	 .wren_a(sram_wr),
-	 .byteena_a(lane),
-	 .q_a(sram_dout)
+    .clock     (clk),
+	 .data_a    (din),
+	 .address_a (addr[13:2]),
+	 .wren_a    (sram_wr),
+	 .byteena_a (lane),
+	 .q_a       (sram_dout)
+);
+
+wire [9:0] uart_dout;
+uart i_uart
+(
+	.clk   (clk),
+	.din   (din[7:0]),
+	.dout  (uart_dout),
+	.wr    (wr),
+	.valid (valid && (addr[31:20] == 12'h200)),
+	.txd   (txd)
 );
 
 localparam
@@ -58,6 +72,7 @@ begin
 	end
 	else
 	begin
+		led[3] <= txd;
 		case (state)
 			S_IDLE:
 			begin
@@ -72,7 +87,12 @@ begin
 						end
 						if (addr[31:20] == 12'h100)
 						begin
-							{led, dig, seg} <= din[15:0];
+							{led[2:0], dig, seg} <= din[14:0];
+							ready <= 1;
+							state <= S_CYCLE_END;
+						end
+						if (addr[31:20] == 12'h200)
+						begin
 							ready <= 1;
 							state <= S_CYCLE_END;
 						end
@@ -82,6 +102,11 @@ begin
 						if (addr[31:20] == 12'h000)
 						begin
 							state <= S_READ_SRAM;
+						end
+						if (addr[31:20] == 12'h200)
+						begin
+							dout <= uart_dout;
+							state <= S_CYCLE_END;
 						end
 					end
 				end
