@@ -3,39 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define UART_TX_EMPTY	(1 << 9)
-
-#define STACK_SIZE	256
-
-__attribute__ ((section(".stack")))
-static unsigned char stack[STACK_SIZE];
-
-unsigned int* uart = (unsigned int*)0x20000000;
-
-void sendchar(int ch)
-{
-	while (!(*uart & UART_TX_EMPTY));
-	*uart = ch;
-}
-
-int putchar(int ch)
-{
-	if (ch == '\n')
-		sendchar('\r');
-	sendchar(ch);
-	return ch;
-}
-
-int recvchar(void)
-{
-	return -1;
-}
-
-void print(const char* s)
-{
-	while (*s)
-		putchar(*s++);
-}
+void print(const char* s);
 
 void wait(void)
 {
@@ -72,12 +40,16 @@ int main(void)
 {
 	char s[16];
 	int i;
+
+	// Please don't use "printf" or other large functions!
+
 	for (i = -100; ; i++)
 	{
 		print("i = ");
 		int_to_str(i, s);
 		print(s);
 		print("\n");
+
 		wait();
 	}
 }

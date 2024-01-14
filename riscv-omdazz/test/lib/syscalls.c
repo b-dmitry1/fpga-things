@@ -3,15 +3,41 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "config.h"
 
-#define HEAP_SIZE	128
+#define UART_TX_EMPTY	(1 << 9)
 
+// Heap and stack
 static char heap[HEAP_SIZE];
-
 static char* _cur_brk = heap;
 
-void sendchar(char ch);
-int recvchar(void);
+__attribute__ ((section(".stack")))
+static unsigned char stack[STACK_SIZE];
+
+static unsigned int *uart = (unsigned int*)0x11000000;
+
+void sendchar(int ch)
+{
+	while (!(*uart & UART_TX_EMPTY));
+	*uart = ch;
+}
+
+int recvchar(void)
+{
+	return 0;
+}
+
+int putchar(int ch)
+{
+	if (ch == '\r')
+		sendchar('\r');
+	sendchar(ch);
+}
+
+void print(const char *s)
+{
+	while (*s) putchar(*s++);
+}
 
 int _read_r(struct _reent* r, int file, char* ptr, int len)
 {

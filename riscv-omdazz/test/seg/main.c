@@ -3,8 +3,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#define STACK_SIZE	256
-
 #define A		0x01
 #define B		0x02
 #define C		0x04
@@ -13,9 +11,6 @@
 #define F		0x20
 #define G		0x40
 #define H		0x80
-
-__attribute__ ((section(".stack")))
-static unsigned char stack[STACK_SIZE];
 
 const unsigned int digits[16] =
 {
@@ -37,30 +32,7 @@ const unsigned int digits[16] =
 	0xFF ^ (A|E|F|G)
 };
 
-unsigned int* port = (unsigned int*)0x10000000;
-
-void sendchar(char ch)
-{
-}
-
-int putchar(int ch)
-{
-	if (ch == '\n')
-		sendchar('\r');
-	sendchar(ch);
-	return ch;
-}
-
-int recvchar(void)
-{
-	return -1;
-}
-
-void wait(void)
-{
-	volatile int w;
-	for (w = 0; w < 10; w++);
-}
+unsigned int *gpio = (unsigned int *)0x10000000;
 
 int main(void)
 {
@@ -72,7 +44,7 @@ int main(void)
 		for (i = 0; i < 4; i++)
 		{
 			for (j = 0; j < 1000; j++)
-				*port = ((0x100 << i) | digits[m % 10]) ^ 0xF00;
+				*gpio = ((0x100 << i) | digits[m % 10]) ^ 0xF00;
 			m /= 10;
 		}
 	}

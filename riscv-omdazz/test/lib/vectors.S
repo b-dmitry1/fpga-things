@@ -7,7 +7,6 @@
 	.word  0
 
 entry:
-
 	la sp, _end_stack
 
 	la t0, _sidata
