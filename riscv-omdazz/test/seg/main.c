@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include "board.h"
 
 #define A		0x01
 #define B		0x02
@@ -31,8 +32,6 @@ const unsigned int digits[16] =
 	0xFF ^ (A|D|E|F|G),
 	0xFF ^ (A|E|F|G)
 };
-
-unsigned int *gpio = (unsigned int *)0x10000000;
 
 int main(void)
 {

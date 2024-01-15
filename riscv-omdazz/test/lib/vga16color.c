@@ -1,9 +1,6 @@
 #include <string.h>
+#include "board.h"
 #include "vga16color.h"
-
-static unsigned char* vram = (unsigned char*)VRAM_PAGE1;
-
-static unsigned int *vdu_io = (unsigned int *)VDU_IO;
 
 #include "font.c"
 
@@ -78,6 +75,48 @@ void fill_rect(int x, int y, int w, int h, int color)
 		for (i = 0; i < h; i++)
 			set_pixel(x + w - 1, y + i, color);
 	}
+}
+
+static void bitblt_unclipped_aligned(int x, int y, int w, int h, const void *bitmap)
+{
+	int i, j;
+	const unsigned int *bmp = (const unsigned int *)bitmap;
+	unsigned int *scr = (unsigned int *)&vram[(x + y * SCREEN_WIDTH) / 2];
+
+	for (i = 0; i < h; i++)
+	{
+		for (j = 0; j < w / 8; j++)
+			*scr++ = *bmp++;
+		scr += SCREEN_WIDTH / 8 - w / 8;
+	}
+}
+
+static void bitblt_unclipped_aligned_color(int x, int y, int w, int h, const void *bitmap, unsigned int color)
+{
+	int i, j;
+	const unsigned int *bmp = (const unsigned int *)bitmap;
+	unsigned int *scr = (unsigned int *)&vram[(x + y * SCREEN_WIDTH) / 2];
+
+	for (i = 0; i < h; i++)
+	{
+		for (j = 0; j < w / 8; j++)
+			*scr++ = *bmp++ & color;
+		scr += SCREEN_WIDTH / 8 - w / 8;
+	}
+}
+
+void bitblt(int x, int y, int w, int h, const void *bitmap)
+{
+	bitblt_unclipped_aligned(x, y, w, h, bitmap);
+}
+
+void bitblt_color(int x, int y, int w, int h, const void *bitmap, unsigned int color)
+{
+	color &= 0x0F;
+	color |= color << 4;
+	color |= color << 8;
+	color |= color << 16;
+	bitblt_unclipped_aligned_color(x, y, w, h, bitmap, color);
 }
 
 void draw_char(int x, int y, unsigned char ch, unsigned char color)

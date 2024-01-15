@@ -7,6 +7,8 @@ module top
 	output reg  [3:0]  dig,
 	output reg  [7:0]  seg,
 	
+	input  wire [3:0]  buttons,
+	
 	output wire        txd,
 	input  wire        rxd,
 
@@ -36,6 +38,8 @@ wire sram_area        = addr[31:28] == 4'h0;
 wire gpio_area        = addr[31:24] == 8'h10;
 wire uart_area        = addr[31:24] == 8'h11;
 wire vdu_io_area      = addr[31:24] == 8'h12;
+wire timer_area       = addr[31:24] == 8'h13;
+wire seg_area         = addr[31:24] == 8'h14;
 wire sdram_area       = addr[31];
 
 //////////////////////////////////////////////////////////////////////////////
@@ -82,10 +86,11 @@ sram i_sram
 // GPIO
 //////////////////////////////////////////////////////////////////////////////
 
+reg [31:0] gpio;
 always @(posedge clk)
 begin
 	if (valid && wr && gpio_area)
-		{led[2:0], dig, seg} <= din[14:0];
+		gpio <= din;
 end
 
 //////////////////////////////////////////////////////////////////////////////
@@ -102,6 +107,65 @@ uart i_uart
 	.valid (valid && uart_area),
 	.txd   (txd)
 );
+
+//////////////////////////////////////////////////////////////////////////////
+// TIMER
+//////////////////////////////////////////////////////////////////////////////
+
+reg [31:0] timer_value;
+reg [ 4:0] timer_div;
+always @(posedge clk)
+begin
+	// Increment every 1 us
+	timer_div   <= timer_div == 5'd19 ? 5'd0 : timer_div + 1'd1;
+	timer_value <= timer_div == 5'd19 ? timer_value + 32'd1 : timer_value;
+end
+
+//////////////////////////////////////////////////////////////////////////////
+// 7-segment display and leds
+//////////////////////////////////////////////////////////////////////////////
+
+reg [31:0] seg_value;
+reg [15:0] seg_div;
+reg seg_blank;
+always @(posedge clk or negedge rst_n)
+begin
+	if (~rst_n)
+	begin
+		seg_value <= 32'd0;
+	end
+	else
+	begin
+		led <= gpio[15:12];
+
+		seg_blank <= ~|seg_value;
+		
+		// Increment every 1 us
+		seg_div <= seg_div + 1'd1;
+		if (seg_blank)
+		begin
+			dig <= gpio[11:8];
+			seg <= gpio[ 7:0];
+		end
+		else
+		begin
+			case (seg_div[15:14])
+				2'd0: begin seg <= ~seg_value[ 7: 0]; dig <= 4'b1110; end
+				2'd1: begin seg <= ~seg_value[15: 8]; dig <= 4'b1101; end
+				2'd2: begin seg <= ~seg_value[23:16]; dig <= 4'b1011; end
+				2'd3: begin seg <= ~seg_value[31:24]; dig <= 4'b0111; end
+			endcase
+		end
+		
+		if (valid && wr && seg_area)
+		begin
+			if (lane[0]) seg_value[ 7: 0] <= din[ 7: 0];
+			if (lane[1]) seg_value[15: 8] <= din[15: 8];
+			if (lane[2]) seg_value[23:16] <= din[23:16];
+			if (lane[3]) seg_value[31:24] <= din[31:24];
+		end
+	end
+end
 
 //////////////////////////////////////////////////////////////////////////////
 // PLL
@@ -201,6 +265,8 @@ begin
 			sram_area ? sram_dout :
 			uart_area ? uart_dout :
 			vdu_io_area ? vdu_io_dout :
+			gpio_area ? {buttons} :
+			timer_area ? timer_value :
 			32'hFFFFFFFF;
 	end
 	

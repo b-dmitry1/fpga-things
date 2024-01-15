@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
-void print(const char* s);
+#include "board.h"
 
 void wait(void)
 {
