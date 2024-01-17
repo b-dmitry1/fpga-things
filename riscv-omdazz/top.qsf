@@ -124,12 +124,25 @@ set_location_assignment PIN_89 -to buttons[1]
 set_location_assignment PIN_90 -to buttons[2]
 set_location_assignment PIN_91 -to buttons[3]
 
+set_location_assignment PIN_141 -to spi_sck
+set_location_assignment PIN_138 -to spi_mosi
+set_location_assignment PIN_143 -to spi_miso
+set_location_assignment PIN_142 -to spi_cs_n
+
 set_global_assignment -name RESERVE_FLASH_NCE_AFTER_CONFIGURATION "AS INPUT TRI-STATED"
 set_global_assignment -name CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION "USE AS REGULAR IO"
 
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
+set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name VERILOG_FILE spi.v
 set_global_assignment -name VERILOG_FILE vdu.v
 set_global_assignment -name VERILOG_FILE uart.v
 set_global_assignment -name VERILOG_FILE sdram.v
@@ -138,11 +151,4 @@ set_global_assignment -name VERILOG_FILE top.v
 set_global_assignment -name VERILOG_FILE riscv.v
 set_global_assignment -name VERILOG_FILE div32.v
 set_global_assignment -name QIP_FILE mul32.qip
-set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
-set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
-set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
-set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
-set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
-set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
-set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

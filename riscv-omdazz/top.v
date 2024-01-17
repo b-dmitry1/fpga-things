@@ -12,6 +12,11 @@ module top
 	output wire        txd,
 	input  wire        rxd,
 
+	output wire        spi_cs_n,
+	input  wire        spi_miso,
+	output wire        spi_mosi,
+	output wire        spi_sck,
+
 	output wire        red,
 	output wire        green,
 	output wire        blue,
@@ -40,6 +45,7 @@ wire uart_area        = addr[31:24] == 8'h11;
 wire vdu_io_area      = addr[31:24] == 8'h12;
 wire timer_area       = addr[31:24] == 8'h13;
 wire seg_area         = addr[31:24] == 8'h14;
+wire spi_area         = addr[31:24] == 8'h15;
 wire sdram_area       = addr[31];
 
 //////////////////////////////////////////////////////////////////////////////
@@ -63,7 +69,7 @@ riscv i_cpu
 	.lane  (lane),
 	.wr    (wr),
 	.valid (valid),
-	.ready (ready || sdram_ready)
+	.ready (ready || sdram_ready || spi_ready)
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -106,6 +112,27 @@ uart i_uart
 	.wr    (wr),
 	.valid (valid && uart_area),
 	.txd   (txd)
+);
+
+//////////////////////////////////////////////////////////////////////////////
+// SPI
+//////////////////////////////////////////////////////////////////////////////
+
+wire [7:0] spi_dout;
+wire       spi_ready;
+spi i_spi
+(
+	.clk   (clk),
+	.din   (din[31:0]),
+	.dout  (spi_dout),
+	.lane  (lane),
+	.wr    (wr),
+	.valid (valid && spi_area),
+	.ready (spi_ready),
+	.cs_n  (spi_cs_n),
+	.miso  (spi_miso),
+	.mosi  (spi_mosi),
+	.sck   (spi_sck)
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -267,11 +294,12 @@ begin
 			vdu_io_area ? vdu_io_dout :
 			gpio_area ? {buttons} :
 			timer_area ? timer_value :
+			spi_area ? spi_dout :
 			32'hFFFFFFFF;
 	end
 	
 	// "Ready" control
-	if (sdram_area)
+	if (sdram_area || (wr && spi_area))
 		ready <= 0;
 	else
 		ready <= last_valid && valid && ~ready;

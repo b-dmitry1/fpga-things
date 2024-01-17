@@ -7,6 +7,7 @@
 #define VDU_IO_AREA     0x12000000u
 #define TIMER_AREA      0x13000000u
 #define SEG_AREA        0x14000000u
+#define SPI_AREA        0x15000000u
 
 #define SDRAM_AREA      0x80000000u
 
@@ -19,6 +20,8 @@ extern volatile unsigned int  *uart;
 extern volatile unsigned int  *vdu_io;
 extern volatile unsigned int  *timer;
 extern volatile unsigned int  *seg;
+extern volatile unsigned int  *spi;
+extern volatile unsigned char *spi_data;
 
 extern unsigned char *sdram;
 
