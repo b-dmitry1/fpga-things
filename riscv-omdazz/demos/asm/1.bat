@@ -7,5 +7,5 @@ riscv64-unknown-elf-objdump -D a.out >a.asm
 del a.out
 
 cd ..
-bin2mif 32 firmware.bin
+..\bin2mif 32 firmware.bin
 move firmware.mif ..

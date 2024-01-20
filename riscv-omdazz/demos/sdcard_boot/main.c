@@ -90,6 +90,8 @@ int main(void)
 	fat_entry_t *dir = (fat_entry_t *)buf;
 	fat32_lfn_entry_t *lfn = (fat32_lfn_entry_t *)buf;
 
+	*seg = 0x7C5C5C78;
+
 	print("\n\n\n\n\n");
 
 init_loop:

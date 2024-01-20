@@ -64,3 +64,11 @@ A smooth hardware vertical scrolling can be achieved by adding +/- 320 bytes to 
 
 The video mode is 640 x 480 pixels with 8 displayed colors packed in a 4-bit values. Each byte of a video memory contains 2 pixels so
 the screen size is 640 x 480 x 4 bit = 153600 bytes. The stride is 320 bytes.
+
+### SD-card connection
+
+![sd-card schematic](sdcard.png)
+
+Full-to-micro SD-card adapter shipped with a card can be connected directly using short wires and 10K resistor.
+
+![sd-card picture](sdcard.jpg)
