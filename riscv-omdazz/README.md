@@ -9,28 +9,42 @@ Execution time:
 * Load in 6 cycles (+ROM/RAM/device delay).
 * Store in 7 cycles (+RAM/device delay).
 
+Peripherial devices:
+* Onboard SDRAM (8 MBytes)
+* Video display controller (VGA 640 x 480 @ 60 Hz, 8 colors)
+* UART
+* SPI
+* Upcounting timer
+* Buttons, LEDs, 7-segment display
+
 ## Building / testing on a Windows machine
 
 * Please use Quartus 13.0 (or later).
-* To compile C examples please use riscv64-unknown-elf- toolchain. The toolchain's BIN directory should be added to PATH. If you don't want to edit your PATH add full path to toolchain's executables in "1.bat" file.
-* The "1.bat" script will do anything for you.
+* To compile C examples please use riscv64-unknown-elf- toolchain. The toolchain's BIN directory should be added to PATH. If you don't want to edit your PATH add full path to toolchain's executables in "compile.bat" files.
+* The "run.bat" script will do anything for you.
 
 ### bin2mif
 
 The "bin2mif" tool's repo: https://github.com/b-dmitry1/bin2mif
 
-Please compile it manually using Visual C++ (on a Windows machine) or GCC (on a Linux machine) and copy to a "test" directory.
+Please compile it manually using Visual C++ (on a Windows machine) or GCC (on a Linux machine) and copy to this directory.
 
 ### Testing
 
-A small collection of sample programs could be found in a "test" directory.
+A small collection of sample programs could be found in a "games" and "demos" directories.
 
-* The CPU is configured to run at 50 Mhz.
-* ROM is located at 0x00000000 - 0x00002FFF (12 kbytes).
-* RAM is located at 0x00003000 - 0x00003FFF (4 kbytes).
-* LED / 7SEG port is located at 0x10000000.
-* SDRAM is located at 0x80000000 - 0x807FFFFF (8 mbytes).
-* Frame buffer can be placed anywhere in a SDRAM.
+The CPU is configured to run at 50 Mhz.
+
+Memory map:
+* 0x00000000 - 0x00002FFF ROM (12 kbytes)
+* 0x00003000 - 0x00003FFF RAM (4 kbytes)
+* 0x10000000 - 0x10000003 GPIO
+* 0x11000000 - 0x11000003 UART
+* 0x12000000 - 0x12000003 VDU regs
+* 0x13000000 - 0x13000003 Timer
+* 0x14000000 - 0x14000003 7-segment display
+* 0x15000000 - 0x15000003 SPI
+* 0x80000000 - 0x807FFFFF SDRAM (8 mbytes)
 
 Please don't use standard "printf", "scanf", or other heavy functions. They need 64K+ ROM.
 
