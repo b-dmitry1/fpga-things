@@ -1,7 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define STACK_SIZE	1024
 #define HEAP_SIZE	256
 
 #define LE16(x) ((x[0] | (x[1] << 8)))

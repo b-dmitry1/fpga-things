@@ -4,17 +4,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "config.h"
+#include "board.h"
 
 #define UART_TX_EMPTY	(1 << 9)
 
 // Heap and stack
 static char heap[HEAP_SIZE];
 static char* _cur_brk = heap;
-
-__attribute__ ((section(".stack")))
-static unsigned char stack[STACK_SIZE];
-
-static unsigned int *uart = (unsigned int*)0x11000000;
 
 void sendchar(int ch)
 {

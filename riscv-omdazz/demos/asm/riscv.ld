@@ -18,18 +18,6 @@ SECTIONS
 		. = ALIGN(4);
 	} > rom
 	
-	.ARM.extab : 
-	{
-		*(.ARM.extab* .gnu.linkonce.armextab.*)
-	} > rom
-
-	__exidx_start = .;
-	.ARM.exidx :
-	{
-		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-	} > rom
-	__exidx_end = .;
-
 	. = ALIGN(4); 
 	_etext = .;
 	_sidata = .; 
@@ -63,14 +51,6 @@ SECTIONS
 		*(COMMON) 
 		. = ALIGN(4); 
 		PROVIDE(_ebss = .); 
-	} > ram
-
-	.stack (NOLOAD):
-	{
-		. = ALIGN(8);
-		*(.stack .stack.*)
-		. = ALIGN(4); 
-		PROVIDE(_end_stack = .); 
 	} > ram
 
 	.heap (NOLOAD):
