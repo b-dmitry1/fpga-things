@@ -6,6 +6,7 @@
 #include "board.h"
 #include "sdcard.h"
 #include "fat.h"
+#include "buffers.h"
 
 typedef struct
 {
@@ -89,6 +90,9 @@ int main(void)
 	unsigned int start, size;
 	fat_entry_t *dir = (fat_entry_t *)buf;
 	fat32_lfn_entry_t *lfn = (fat32_lfn_entry_t *)buf;
+	file_entry_t fe;
+	unsigned char *b;
+	file_t f;
 
 	*seg = 0x7C5C5C78;
 
@@ -154,6 +158,35 @@ init_loop:
 
 	sd_read(buf, fat.root_dir_start);
 
+	fat_find_init(&fat, &fe);
+
+	while (fat_find_next(&fat, &fe))
+	{
+		print(fe.name);
+		print_int("   sz ", fe.size, "   ");
+		print_int("   atr ", fe.attr, "   ");
+		print_int("   start ", fe.first_sector, "   ");
+		print("\n");
+	}	
+
+	if (!fat_open(&fat, &f, "BOOTEX.LOG"))
+	{
+		print("Can\'t open\n");
+		for (;;);
+	}
+
+	for (i = 0; i < f.entry.size; i += SECTOR_SIZE)
+	{
+		if (!fat_read_next_sector(&fat, &f, buf))
+			break;
+
+		for (j = 0; j < 512; j++)
+			if (buf[j] != 0)
+				putchar(buf[j]);
+	}
+
+	for (;;);
+	
 	for (i = 0; i < 512 / 32; i++)
 	{
 		if (dir[i].name[0] == 0)

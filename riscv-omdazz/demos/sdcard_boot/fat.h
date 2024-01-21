@@ -1,6 +1,8 @@
 #ifndef FAT_H
 #define FAT_H
 
+#define SECTOR_SIZE	512
+
 #define FAT_BUFFER_SIZE	512
 
 typedef struct
@@ -9,10 +11,29 @@ typedef struct
 	unsigned int fat_start;
 	unsigned int root_dir_start;
 	unsigned char buffer[FAT_BUFFER_SIZE];
+	unsigned int sectors_per_cluster;
+	unsigned int root_dir_cluster_;
 
 	void *user;
 	int (*read)(void *user, unsigned int number, void *buffer);
 } fat_t;
+
+typedef struct
+{
+	char name[16];
+	unsigned int attr;
+	unsigned int size;
+	unsigned int first_sector;
+	unsigned int dir_sector;
+	unsigned int dir_pos;
+} file_entry_t;
+
+typedef struct
+{
+	file_entry_t entry;
+	unsigned int pos;
+	unsigned int sector;
+} file_t;
 
 typedef struct
 {
@@ -44,5 +65,9 @@ typedef struct
 
 int fat_mount(fat_t *fs, int (*read_sector)(void *user, unsigned int number, void *buffer),
 	void *user, int partition_start);
+int fat_find_init(fat_t *fs, file_entry_t *entry);
+int fat_find_next(fat_t *fs, file_entry_t *entry);
+int fat_open(fat_t *fs, file_t *file, const char *name);
+int fat_read_next_sector(fat_t *fs, file_t *file, unsigned char *buf);
 
 #endif
