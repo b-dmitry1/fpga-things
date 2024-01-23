@@ -100,7 +100,7 @@ localparam
 	S_START        = 0,
 	S_IDLE         = 1,
 	S_PRECHARGE    = 2,
-	S_LOADMODE     = 3,
+	S_DELAY        = 3,
 	S_READ_CPU     = 4,
 	S_READ_CPU_1   = 5,
 	S_READ_CPU_2   = 6,
@@ -257,9 +257,9 @@ begin
 				cmd <= LOADMODE;
 				a <= 13'h220;
 				ba <= 2'b00;
-				state <= S_LOADMODE;
+				state <= S_DELAY;
 			end
-			S_LOADMODE:
+			S_DELAY:
 			begin
 				cmd <= NOP;
 				state <= S_IDLE;
@@ -285,7 +285,7 @@ begin
 			begin
 				cpu_dout[31:16] <= d;
 				cpu_ready <= 1;
-				state <= S_IDLE;
+				state <= S_DELAY;
 			end
 			S_WRITE_CPU:
 			begin

@@ -83,6 +83,26 @@ void print_int(const char *prefix, int value, const char *suffix)
 unsigned char buf[512];
 mbr_t *mbr = (mbr_t *)buf;
 
+void init_sdcard(void)
+{
+	for (;;)
+	{
+		wait();
+
+		print("sd_init: ");
+
+		switch (sd_init())
+		{
+			case SD_NONE:     print("not found\n"); continue;
+			case SD_MMC:      print("MMC\n"); break;
+			case SD_V1:       print("SD v1\n"); break;
+			case SD_V2:       print("SD v2\n"); break;
+			case SD_V2_BLOCK: print("SD v2 (block)\n"); break;
+		}
+		break;
+	}
+}
+
 int main(void)
 {
 	char s[16];
@@ -93,24 +113,16 @@ int main(void)
 	file_entry_t fe;
 	unsigned char *b;
 	file_t f;
+	void (*kernel)(unsigned int reserved, unsigned int mach, const void* dt) = (void (*)(unsigned int, unsigned int, const void*))sdram;
+	unsigned char *sdram8 = (unsigned char *)sdram;
 
 	*seg = 0x7C5C5C78;
 
+	*vdu_io = 0x80700000u;
+
 	print("\n\n\n\n\n");
 
-init_loop:
-	wait();
-
-	print("sd_init: ");
-
-	switch (sd_init())
-	{
-		case SD_NONE:     print("not found\n"); goto init_loop;
-		case SD_MMC:      print("MMC\n"); break;
-		case SD_V1:       print("SD v1\n"); break;
-		case SD_V2:       print("SD v2\n"); break;
-		case SD_V2_BLOCK: print("SD v2 (block)\n"); break;
-	}
+	init_sdcard();
 
 	sd_read(buf, 0);
 
@@ -169,7 +181,7 @@ init_loop:
 		print("\n");
 	}	
 
-	if (!fat_open(&fat, &f, "BOOTEX.LOG"))
+	if (!fat_open(&fat, &f, "TEST.RV3"))
 	{
 		print("Can\'t open\n");
 		for (;;);
@@ -180,48 +192,12 @@ init_loop:
 		if (!fat_read_next_sector(&fat, &f, buf))
 			break;
 
-		for (j = 0; j < 512; j++)
-			if (buf[j] != 0)
-				putchar(buf[j]);
+		memcpy(sdram8, buf, SECTOR_SIZE);
+		sdram8 += SECTOR_SIZE;
 	}
 
-	for (;;);
-	
-	for (i = 0; i < 512 / 32; i++)
-	{
-		if (dir[i].name[0] == 0)
-			break;
+	for (i = 0; i < 1000; i++)
+		putchar('.');
 
-		if (dir[i].name[0] != 0xe5 && dir[i].name[0] != 0x05)
-		{
-			if (dir[i].attr == 0x0f)
-			{
-				for (j = 0; j < 10; j+=2)
-				{
-					if (lfn[i].name1[j] == 0xFF) goto lfn_done;
-					putchar(lfn[i].name1[j]);
-				}
-				for (j = 0; j < 12; j+=2)
-				{
-					if (lfn[i].name2[j] == 0xFF) goto lfn_done;
-					putchar(lfn[i].name2[j]);
-				}
-				for (j = 0; j < 4; j+=2)
-				{
-					if (lfn[i].name3[j] == 0xFF) goto lfn_done;
-					putchar(lfn[i].name3[j]);
-				}
-			}
-			else
-			{
-				for (j = 0; j < 11; j++)
-					putchar(dir[i].name[j]);
-			}
-
-lfn_done:
-			print("\n");
-		}
-	}
-
-	for (;;);
+	kernel(0, 0, 0);
 }

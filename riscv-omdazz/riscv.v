@@ -227,6 +227,7 @@ begin
 		// Force reset r0
 		rdata <= 32'd0;
 		write_rd <= 1;
+		instr <= 32'd0;
 		// Start execution
 		state <= S_IDLE;
 	end

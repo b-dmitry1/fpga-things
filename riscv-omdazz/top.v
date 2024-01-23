@@ -83,7 +83,7 @@ sram i_sram
 	.clock     (clk),
 	.data_a    (din),
 	.address_a (addr[13:2]),
-	.wren_a    (wr && sram_area),
+	.wren_a    (valid && wr && sram_area),
 	.byteena_a (lane),
 	.q_a       (sram_dout)
 );
@@ -282,27 +282,35 @@ end
 
 reg last_valid;
 
-always @(posedge clk)
+always @(posedge clk or negedge rst_n)
 begin
-	// Peripherial to CPU data bus
-	last_valid <= valid;
-	if (last_valid && valid && ~ready)
+	if (~rst_n)
 	begin
-		dout <=
-			sram_area ? sram_dout :
-			uart_area ? uart_dout :
-			vdu_io_area ? vdu_io_dout :
-			gpio_area ? {buttons} :
-			timer_area ? timer_value :
-			spi_area ? spi_dout :
-			32'hFFFFFFFF;
-	end
-	
-	// "Ready" control
-	if (sdram_area || (wr && spi_area))
 		ready <= 0;
+		last_valid <= 0;
+	end
 	else
-		ready <= last_valid && valid && ~ready;
+	begin
+		// Peripherial to CPU data bus
+		last_valid <= valid;
+		if (last_valid && valid && ~ready)
+		begin
+			dout <=
+				sram_area ? sram_dout :
+				uart_area ? uart_dout :
+				vdu_io_area ? vdu_io_dout :
+				gpio_area ? {buttons} :
+				timer_area ? timer_value :
+				spi_area ? spi_dout :
+				32'hFFFFFFFF;
+		end
+
+		// "Ready" control
+		if (sdram_area || (wr && spi_area))
+			ready <= 0;
+		else
+			ready <= last_valid && valid && ~ready;
+	end
 end
 
 endmodule
