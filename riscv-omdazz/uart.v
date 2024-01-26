@@ -1,13 +1,13 @@
 module uart
 (
-	input wire       clk,
+	input wire        clk,
 	
-	input wire [7:0] din,
-	output reg [9:0] dout,
-	input wire       wr,
-	input wire       valid,
+	input wire [31:0] din,
+	output reg [31:0] dout,
+	input wire        wr,
+	input wire        valid,
 	
-	output reg       txd
+	output reg        txd
 );
 
 localparam
@@ -32,14 +32,14 @@ begin
 		tstate == S_IDLE ? 1'b1 :
 		tdata[0];
 	
-	dout[9] <= tstate == S_IDLE;
+	dout <= tstate == S_IDLE ? 32'h6000 : 32'h0;
 	
 	case (tstate)
 		S_IDLE:
 		begin
 			if (valid && wr)
 			begin
-				tdata <= {1'b1, din, 1'b0};
+				tdata <= {1'b1, din[7:0], 1'b0};
 				tstate <= S_TRANSMIT;
 			end
 		end

@@ -2,7 +2,7 @@
 #.section .isr_vector
 #.align 2
 
-	la t0, 0x10000000
+	la t0, 0x13000000
 
 data_loop:
 	la t1, 0xEE0000

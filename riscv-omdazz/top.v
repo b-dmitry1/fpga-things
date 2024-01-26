@@ -40,10 +40,10 @@ module top
 //////////////////////////////////////////////////////////////////////////////
 
 wire sram_area        = addr[31:28] == 4'h0;
-wire gpio_area        = addr[31:24] == 8'h10;
-wire uart_area        = addr[31:24] == 8'h11;
+wire uart_area        = addr[31:24] == 8'h10;
+wire timer_area       = addr[31:24] == 8'h11;
 wire vdu_io_area      = addr[31:24] == 8'h12;
-wire timer_area       = addr[31:24] == 8'h13;
+wire gpio_area        = addr[31:24] == 8'h13;
 wire seg_area         = addr[31:24] == 8'h14;
 wire spi_area         = addr[31:24] == 8'h15;
 wire sdram_area       = addr[31];
@@ -103,11 +103,11 @@ end
 // UART
 //////////////////////////////////////////////////////////////////////////////
 
-wire [9:0] uart_dout;
+wire [31:0] uart_dout;
 uart i_uart
 (
 	.clk   (clk),
-	.din   (din[7:0]),
+	.din   (din),
 	.dout  (uart_dout),
 	.wr    (wr),
 	.valid (valid && uart_area),

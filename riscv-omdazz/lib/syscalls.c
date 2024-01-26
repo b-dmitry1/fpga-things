@@ -6,7 +6,7 @@
 #include "config.h"
 #include "board.h"
 
-#define UART_TX_EMPTY	(1 << 9)
+#define UART_TX_EMPTY	0x4000
 
 // Heap and stack
 static char heap[HEAP_SIZE];
