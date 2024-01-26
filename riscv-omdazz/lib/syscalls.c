@@ -25,7 +25,7 @@ int recvchar(void)
 
 int putchar(int ch)
 {
-	if (ch == '\r')
+	if (ch == '\n')
 		sendchar('\r');
 	sendchar(ch);
 }

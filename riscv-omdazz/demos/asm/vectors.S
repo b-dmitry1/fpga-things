@@ -2,12 +2,14 @@
 #.section .isr_vector
 #.align 2
 
-	la t0, 0x10000004
+	la t0, 0x10000000
 
 data_loop:
-	la t1, 0xEE00
+	la t1, 0xEE0000
+	la t2, 0x1000000
+	mulhu t1, t1, t2   # should be 0xEE00
 	la t2, 0x77 ^ 0xFF
-	xor t1, t1, t2
+	xor t1, t1, t2     # should be 0xEE88
 	call wait1
 	la t1, 0xFFFF
 	sw t1, 0(t0)

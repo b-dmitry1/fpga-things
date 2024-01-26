@@ -150,5 +150,5 @@ set_global_assignment -name VERILOG_FILE sram.v
 set_global_assignment -name VERILOG_FILE top.v
 set_global_assignment -name VERILOG_FILE riscv.v
 set_global_assignment -name VERILOG_FILE div32.v
-set_global_assignment -name QIP_FILE mul32.qip
+set_global_assignment -name VERILOG_FILE mul32.v
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

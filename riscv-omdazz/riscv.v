@@ -51,9 +51,9 @@ always @ (posedge clk)
 begin
 	case (func3)
 		3'b000: alu_op <= opcode == 5'b01100 && func7[0] ? OP_MUL : opcode[3] && func7[5] ? OP_SUB : OP_ADD;
-		3'b001: alu_op <= OP_SLL;
-		3'b010: alu_op <= OP_SLT;
-		3'b011: alu_op <= OP_SLTU;
+		3'b001: alu_op <= opcode == 5'b01100 && func7[0] ? OP_MUL : OP_SLL;
+		3'b010: alu_op <= opcode == 5'b01100 && func7[0] ? OP_MUL : OP_SLT;
+		3'b011: alu_op <= opcode == 5'b01100 && func7[0] ? OP_MUL : OP_SLTU;
 		3'b100: alu_op <= opcode == 5'b01100 && func7[0] ? OP_DIV : OP_XOR;
 		3'b101: alu_op <= opcode == 5'b01100 && func7[0] ? OP_DIV : func7[5] ? OP_SRA : OP_SRL;
 		3'b110: alu_op <= opcode == 5'b01100 && func7[0] ? OP_REM : OP_OR;
@@ -61,7 +61,7 @@ begin
 	endcase
 end
 
-wire is_shift   = (opcode == 5'b00100 || opcode == 5'b01100) && (func3 == 3'b001 || func3 == 3'b101);
+wire is_shift   = (opcode == 5'b00100 || ({func7[0], opcode} == 6'b001100)) && (func3 == 3'b001 || func3 == 3'b101);
 wire is_div_rem = opcode == 5'b01100 && func7[0] && func3[2];
 wire is_mul     = opcode == 5'b01100 && func7[0] && (!func3[2]);
 
@@ -164,14 +164,18 @@ end
 // MUL
 //////////////////////////////////////////////////////////////////////////////
 
-wire [31:0] result_mul;
-wire [31:0] mul_q;
+reg  [31:0] result_mul;
+wire [63:0] mul_q;
+reg         mul_valid;
+wire        mul_ready;
 mul32 i_mul32
 (
-	.clock(clk),
-	.dataa  (r1),
-	.datab  (r2),
-	.result (result_mul)
+	.clk(clk),
+	.a  (r1),
+	.b  (r2),
+	.res (mul_q),
+	.valid      (mul_valid),
+	.ready      (mul_ready)
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -275,7 +279,7 @@ begin
 				else if (is_div_rem)
 					state <= S_DIV;
 				else if (is_mul)
-					state <= S_DIV;
+					state <= S_MUL;
 				else if (is_shift)
 					state <= S_SHIFT;
 				else
@@ -410,11 +414,19 @@ begin
 				begin
 					div_valid <= 0;
 					write_rd <= rd != 5'b00000;
-					state <= S_IDLE;
+					state <= S_EXECUTE;
 				end
 			end
 			S_MUL:
-				state <= S_MUL2;
+			begin
+				mul_valid <= 1;
+				if (mul_ready)
+				begin
+					result_mul <= func3[1:0] != 2'b00 ? mul_q[63:32] : mul_q[31:0];
+					mul_valid <= 0;
+					state <= S_MUL2;
+				end
+			end
 			S_MUL2:
 				state <= S_EXECUTE;
 		endcase
