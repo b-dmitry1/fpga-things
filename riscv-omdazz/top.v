@@ -69,7 +69,9 @@ riscv i_cpu
 	.lane  (lane),
 	.wr    (wr),
 	.valid (valid),
-	.ready (ready || sdram_ready || spi_ready)
+	.ready (ready || sdram_ready || spi_ready),
+
+	.timer_irq (timer_irq)
 );
 
 //////////////////////////////////////////////////////////////////////////////
@@ -140,13 +142,36 @@ spi i_spi
 // TIMER
 //////////////////////////////////////////////////////////////////////////////
 
-reg [31:0] timer_value;
-reg [ 4:0] timer_div;
-always @(posedge clk)
+reg [63:0] mtime;
+reg [63:0] mtimecmp;
+reg [ 5:0] timer_div;
+reg [31:0] timer_dout;
+wire       timer_irq = (mtimecmp[31:0] != 32'd0) && (mtime[31:0] > mtimecmp[31:0]);
+always @(posedge clk or negedge rst_n)
 begin
-	// Increment every 1 us
-	timer_div   <= timer_div == 5'd19 ? 5'd0 : timer_div + 1'd1;
-	timer_value <= timer_div == 5'd19 ? timer_value + 32'd1 : timer_value;
+	if (~rst_n)
+	begin
+		mtime    <= 64'd0;
+		mtimecmp <= 64'd0;
+	end
+	else
+	begin
+		// Increment every 1 us
+		timer_div <= timer_div == 6'd49 ? 5'd0 : timer_div + 1'd1;
+		mtime     <= timer_div == 6'd49 ? mtime + 32'd1 : mtime;
+
+		if (valid && wr && timer_area && addr[15:0] == 16'h4000)
+			mtimecmp[31: 0] <= din;
+		if (valid && wr && timer_area && addr[15:0] == 16'h4004)
+			mtimecmp[63:32] <= din;
+
+		case (addr[3:2])
+			2'b00: timer_dout <= mtimecmp[31: 0];
+			2'b01: timer_dout <= mtimecmp[63:32];
+			2'b10: timer_dout <= mtime   [31: 0];
+			2'b11: timer_dout <= mtime   [63:32];
+		endcase
+	end
 end
 
 //////////////////////////////////////////////////////////////////////////////
@@ -301,7 +326,7 @@ begin
 				uart_area ? uart_dout :
 				vdu_io_area ? vdu_io_dout :
 				gpio_area ? {buttons} :
-				timer_area ? timer_value :
+				timer_area ? timer_dout :
 				spi_area ? spi_dout :
 				32'hFFFFFFFF;
 		end
