@@ -75,12 +75,27 @@ int fat_mount(fat_t *fs, int (*read_sector)(void *user, unsigned int number, voi
 
 unsigned int next_sector(fat_t *fs, unsigned int sector)
 {
+	unsigned int *buf;
+
 	if ((sector + 1) % fs->sectors_per_cluster != 0)
 	{
 		return sector + 1;
 	}
 
-	return 0;
+	sector -= sector % fs->sectors_per_cluster;
+	sector -= fs->root_dir_start - fs->root_dir_cluster_ * fs->sectors_per_cluster;
+	sector /= fs->sectors_per_cluster;
+
+	buf = (unsigned int *)get_buffer(fs->fat_start + sector / 128);
+	if (buf == NULL)
+		return 0;
+
+	sector = LE32(((unsigned char *)&buf[sector % 128]));
+
+	sector *= fs->sectors_per_cluster;
+	sector += fs->root_dir_start - fs->root_dir_cluster_ * fs->sectors_per_cluster;
+
+	return sector;
 }
 
 int fat_find_next(fat_t *fs, file_entry_t *entry)

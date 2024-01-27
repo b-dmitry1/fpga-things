@@ -80,6 +80,34 @@ void print_int(const char *prefix, int value, const char *suffix)
 	print(suffix);
 }
 
+void print_hex(unsigned int value)
+{
+	const char *hex = "0123456789ABCDEF";
+	int i;
+
+	for (i = 0; i < 8; i++)
+	{
+		putchar(hex[value >> 28u]);
+		value <<= 4;
+	}
+}
+
+void dump32(unsigned int *data)
+{
+	int i;
+	for (i = 0; i < 8; i++)
+	{
+		print_hex(*data++);
+		putchar(' ');
+		print_hex(*data++);
+		putchar(' ');
+		print_hex(*data++);
+		putchar(' ');
+		print_hex(*data++);
+		putchar('\n');
+	}
+}
+
 unsigned char buf[512];
 mbr_t *mbr = (mbr_t *)buf;
 
@@ -103,6 +131,31 @@ void init_sdcard(void)
 	}
 }
 
+int load_file(const char *name, unsigned char *ptr)
+{
+	file_t f;
+	int i;
+
+	if (!fat_open(&fat, &f, name))
+	{
+		print("Can\'t open ");
+		print(name);
+		print("\n");
+		return 0;
+	}
+
+	for (i = 0; i < f.entry.size; i += SECTOR_SIZE)
+	{
+		if (!fat_read_next_sector(&fat, &f, buf))
+			break;
+
+		memcpy(ptr, buf, SECTOR_SIZE);
+		ptr += SECTOR_SIZE;
+	}
+
+	return 1;
+}
+
 int main(void)
 {
 	char s[16];
@@ -115,6 +168,7 @@ int main(void)
 	file_t f;
 	void (*kernel)(unsigned int reserved, unsigned int mach, const void* dt) = (void (*)(unsigned int, unsigned int, const void*))sdram;
 	unsigned char *sdram8 = (unsigned char *)sdram;
+	unsigned char *fdt = (unsigned char *)&sdram[0x7F0000];
 
 	*seg = 0x7C5C5C78;
 
@@ -168,6 +222,9 @@ int main(void)
 	print_int("mount ok\nFAT start: ", fat.fat_start, "\n");
 	print_int("Root dir start: ", fat.root_dir_start, "\n");
 
+	sd_read(buf, fat.fat_start);
+	dump32((unsigned int *)buf);
+
 	sd_read(buf, fat.root_dir_start);
 
 	fat_find_init(&fat, &fe);
@@ -181,23 +238,17 @@ int main(void)
 		print("\n");
 	}	
 
-	if (!fat_open(&fat, &f, "TEST.RV3"))
-	{
-		print("Can\'t open\n");
+	print("Loading device tree...\n");
+	if (!load_file("FDT", fdt))
 		for (;;);
-	}
 
-	for (i = 0; i < f.entry.size; i += SECTOR_SIZE)
-	{
-		if (!fat_read_next_sector(&fat, &f, buf))
-			break;
+	print("Loading kernel...\n");
+	if (!load_file("IMAGE", sdram))
+		for (;;);
 
-		memcpy(sdram8, buf, SECTOR_SIZE);
-		sdram8 += SECTOR_SIZE;
-	}
+	print("Starting Linux...\n");
 
-	for (i = 0; i < 1000; i++)
-		putchar('.');
+	*seg = 0;
 
-	kernel(0, 0, 0);
+	kernel(fdt, fdt, fdt);
 }
