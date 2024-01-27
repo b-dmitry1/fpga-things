@@ -65,6 +65,13 @@ wire is_shift   = (opcode == 5'b00100 || ({func7[0], opcode} == 6'b001100)) && (
 wire is_div_rem = opcode == 5'b01100 && func7[0] && func3[2];
 wire is_mul     = opcode == 5'b01100 && func7[0] && (!func3[2]);
 
+wire is_lr     = opcode == 5'b01011 && func7[6:2] == 5'b00010;
+wire is_sc     = opcode == 5'b01011 && func7[6:2] == 5'b00011;
+wire is_amoadd = opcode == 5'b01011 && func7[6:2] == 5'b00000;
+wire is_lr_amo = opcode == 5'b01011 && func7[6:2] != 5'b00011;
+
+wire is_csr    = opcode == 5'b11100;
+
 //////////////////////////////////////////////////////////////////////////////
 // ALU
 //////////////////////////////////////////////////////////////////////////////
@@ -214,9 +221,11 @@ localparam
 	S_SHIFT       = 4'd8,
 	S_SHIFT_WAIT  = 4'd9,
 	S_DIV         = 4'd10,
-	S_DIV_WAIT    = 4'd11,
-	S_MUL         = 4'd12,
-	S_MUL2        = 4'd13;
+	S_MUL         = 4'd11,
+	S_MUL2        = 4'd12,
+	S_ATOMIC_READ = 4'd13,
+	S_ATOMIC_WRITE= 4'd14,
+	S_CSR_READ    = 4'd15;
 
 reg  [3:0] state;
 
@@ -282,6 +291,12 @@ begin
 					state <= S_MUL;
 				else if (is_shift)
 					state <= S_SHIFT;
+				else if (is_lr_amo)
+					state <= S_ATOMIC_READ;
+				else if (is_sc)
+					state <= S_ATOMIC_WRITE;
+				else if (is_csr)
+					state <= S_CSR_READ;
 				else
 					state <= S_EXECUTE;
 			end
@@ -406,10 +421,6 @@ begin
 			S_DIV:
 			begin
 				div_valid <= 1;
-				state <= S_DIV_WAIT;
-			end
-			S_DIV_WAIT:
-			begin
 				if (div_ready)
 				begin
 					div_valid <= 0;
@@ -429,6 +440,48 @@ begin
 			end
 			S_MUL2:
 				state <= S_EXECUTE;
+			S_ATOMIC_READ:
+			begin
+				addr <= r1;
+				wr <= 0;
+				valid <= 1;
+				if (ready)
+				begin
+					valid <= 0;
+					rdata <= din;
+					write_rd <= rd != 5'b00000;
+					if (is_lr)
+						state <= S_IDLE;
+					else
+						state <= S_ATOMIC_WRITE;
+				end
+			end
+			S_ATOMIC_WRITE:
+			begin
+				addr <= r1;
+				case (func7[6:2])
+					5'b00000: dout <= r2 + rdata; // AMOADD
+					5'b00100: dout <= r2 ^ rdata; // AMOXOR
+					5'b01100: dout <= r2 & rdata; // AMOAND
+					5'b01000: dout <= r2 | rdata; // AMOOR
+					default:  dout <= r2;
+				endcase
+				wr <= 1;
+				valid <= 1;
+				if (ready)
+				begin
+					valid <= 0;
+					rdata <= is_sc ? 32'd0 : rdata;
+					write_rd <= rd != 5'b00000;
+					state <= S_IDLE;
+				end
+			end
+			S_CSR_READ:
+			begin
+				rdata <= 32'd0;
+				write_rd <= rd != 5'b00000;
+				state <= S_IDLE;
+			end
 		endcase
 	end
 end

@@ -107,6 +107,7 @@ wire [31:0] uart_dout;
 uart i_uart
 (
 	.clk   (clk),
+	.addr  (addr),
 	.din   (din),
 	.dout  (uart_dout),
 	.wr    (wr),

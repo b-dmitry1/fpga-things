@@ -2,6 +2,7 @@ module uart
 (
 	input wire        clk,
 	
+	input wire [ 2:0] addr,
 	input wire [31:0] din,
 	output reg [31:0] dout,
 	input wire        wr,
@@ -32,7 +33,10 @@ begin
 		tstate == S_IDLE ? 1'b1 :
 		tdata[0];
 	
-	dout <= tstate == S_IDLE ? 32'h6000 : 32'h0;
+	if (addr[2])
+		dout <= tstate == S_IDLE ? 32'h6000 : 32'h0;
+	else
+		dout <= 32'd0;
 	
 	case (tstate)
 		S_IDLE:

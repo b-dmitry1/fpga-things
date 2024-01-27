@@ -14,7 +14,7 @@ static char* _cur_brk = heap;
 
 void sendchar(int ch)
 {
-	while (!(*uart & UART_TX_EMPTY));
+	while (!(uart[1] & UART_TX_EMPTY));
 	*uart = ch;
 }
 

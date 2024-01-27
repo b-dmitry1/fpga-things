@@ -37,13 +37,9 @@ begin
 	else
 	begin
 		if (am[0])
-		begin
-			res[31:0] <= res[31:0] | bm[31:0];
-			res[63:32] <= res[63:32] | bm[63:32];
-		end
+			res[63:0] <= res[63:0] + bm[63:0];
 		am <= am[31:1];
-		bm[31:0] <= {bm[30:0], 1'b0};
-		bm[63:32] <= bm[62:31];
+		bm[63:0] <= {bm[62:0], 1'b0};
 		ready <= am == 32'd1;
 	end
 end

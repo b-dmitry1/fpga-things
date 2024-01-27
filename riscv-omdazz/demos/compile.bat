@@ -13,6 +13,10 @@ for %%f in ("%1\*.c") do (
   set c=!c!%%f 
 )
 
+for %%f in ("%1\*.S") do (
+  set c=!c!%%f 
+)
+
 riscv64-unknown-elf-gcc -march=rv32im -mabi=ilp32 -mcmodel=medany -O2 -nostartfiles -I. -I%1 -I..\lib -T..\lib\riscv.ld ..\lib\vectors.S !c!
 if errorlevel 1 goto error
 riscv64-unknown-elf-objcopy -O binary a.out firmware.bin
