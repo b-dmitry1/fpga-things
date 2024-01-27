@@ -285,8 +285,12 @@ localparam
 reg  [3:0] state;
 
 wire [31:0] store_addr = r1 + s_imm;
+reg         misaligned;
+reg [ 3:0]  next_lane;
+reg [31:0]  next_addr;
 
 reg mmode;
+reg phase;
 
 always @ (posedge clk or posedge rst)
 begin
@@ -313,6 +317,8 @@ begin
 		case (state)
 			S_IDLE:
 			begin
+				phase <= 0;
+
 				// Save previous result to r[rd]
 				if (write_rd)
 					r[rd] <= is_alu_instr ? alu_res : rdata;
@@ -469,38 +475,86 @@ begin
 			end
 			S_WRITE:
 			begin
-				// Set data and select byte lanes
-				case (func3)
-					3'b000:
+				if (~phase)
+				begin
+					misaligned <= 0;
+					if (misaligned)
 					begin
-						lane[0] <= store_addr[1:0] == 2'b00;
-						lane[1] <= store_addr[1:0] == 2'b01;
-						lane[2] <= store_addr[1:0] == 2'b10;
-						lane[3] <= store_addr[1:0] == 2'b11;
-						dout <= {4{r2[7:0]}};
+						lane <= next_lane;
+						addr <= {next_addr[31:2], 2'b00};
 					end
-					3'b001:
+					else
 					begin
-						lane[0] <= store_addr[1] == 1'b0;
-						lane[1] <= store_addr[1] == 1'b0;
-						lane[2] <= store_addr[1] == 1'b1;
-						lane[3] <= store_addr[1] == 1'b1;
-						dout <= {2{r2[15:0]}};
+						addr <= {store_addr[31:2], 2'b00};
+						// Set data and select byte lanes
+						case (func3)
+							3'b000:
+							begin
+								lane[0] <= store_addr[1:0] == 2'b00;
+								lane[1] <= store_addr[1:0] == 2'b01;
+								lane[2] <= store_addr[1:0] == 2'b10;
+								lane[3] <= store_addr[1:0] == 2'b11;
+								dout <= {4{r2[7:0]}};
+							end
+							3'b001:
+							begin
+								lane[0] <= store_addr[1] == 1'b0;
+								lane[1] <= store_addr[1] == 1'b0;
+								lane[2] <= store_addr[1] == 1'b1;
+								lane[3] <= store_addr[1] == 1'b1;
+								dout <= {2{r2[15:0]}};
+							end
+							3'b010:
+							begin
+								// 32 bit write
+								case (store_addr[1:0])
+									2'b00:
+									begin
+										// Aligned
+										lane <= 4'b1111;
+										dout <= r2;
+									end
+									2'b01:
+									begin
+										misaligned <= 1;
+										lane <= 4'b1110;
+										dout <= {r2[23:0], r2[31:24]};
+										next_lane <= 4'b0001;
+										next_addr <= store_addr + 3'd4;
+									end
+									2'b10:
+									begin
+										misaligned <= 1;
+										lane <= 4'b1100;
+										dout <= {r2[15:0], r2[31:16]};
+										next_lane <= 4'b0011;
+										next_addr <= store_addr + 3'd4;
+									end
+									2'b11:
+									begin
+										misaligned <= 1;
+										lane <= 4'b1000;
+										dout <= {r2[7:0], r2[31:8]};
+										next_lane <= 4'b0111;
+										next_addr <= store_addr + 3'd4;
+									end
+								endcase
+							end
+						endcase
 					end
-					3'b010:
-					begin
-						lane <= 4'b1111;
-						dout <= r2;
-					end
-				endcase
+				end
 
-				addr <= store_addr;
+				phase <= 1;
 				wr <= 1;
 				valid <= 1;
+
 				if (ready)
 				begin
 					valid <= 0;
-					state <= S_IDLE;
+					if (~misaligned)
+						state <= S_IDLE;
+					else
+						phase <= 0;
 				end
 			end
 			S_SHIFT:
