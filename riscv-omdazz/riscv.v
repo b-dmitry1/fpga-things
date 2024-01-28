@@ -450,27 +450,106 @@ begin
 				if (ready)
 				begin
 					case (func3)
-						3'b000: rdata <=      // LB
+						3'b000:
+							rdata <=      // LB
 							addr[1:0] == 2'b00 ? {{24{din[7]}}, din[7:0]} :
 							addr[1:0] == 2'b01 ? {{24{din[15]}}, din[15:8]} :
 							addr[1:0] == 2'b10 ? {{24{din[23]}}, din[23:16]} :
 												 {{24{din[31]}}, din[31:24]};
-						3'b001: rdata <=      // LH
-							addr[1]   == 1'b0 ? {{16{din[15]}}, din[15:0]} :
-												 {{16{din[31]}}, din[31:16]};
-						3'b010: rdata <= din; // LW
+						3'b001:
+						begin
+							// LH
+							case (addr[1:0])
+								2'b00: rdata <= {{16{din[15]}}, din[15: 0]};
+								2'b01: rdata <= {{16{din[23]}}, din[23: 8]};
+								2'b10: rdata <= {{16{din[31]}}, din[31:16]};
+								2'b11:
+								begin
+									if (~phase)
+									begin
+										rdata[7:0] <= din[31:24];
+										r1 <= r1 + 3'd4;
+										phase <= 1;
+									end
+									else
+										rdata[31:8] <= {{16{din[7]}}, din[7:0]};
+								end
+							endcase
+						end
+						3'b010:
+						begin
+							// LW
+							case (addr[1:0])
+								2'b00: rdata <= din;
+								2'b01:
+								begin
+									if (~phase)
+									begin
+										rdata[23:0] <= din[31:8];
+										r1 <= r1 + 3'd4; // easiest way
+										phase <= 1;
+									end
+									else
+										rdata[31:24] <= din[7:0];
+								end
+								2'b10:
+								begin
+									if (~phase)
+									begin
+										rdata[15:0] <= din[31:16];
+										r1 <= r1 + 3'd4;
+										phase <= 1;
+									end
+									else
+										rdata[31:16] <= din[15:0];
+								end
+								2'b11:
+								begin
+									if (~phase)
+									begin
+										rdata[7:0] <= din[31:24];
+										r1 <= r1 + 3'd4;
+										phase <= 1;
+									end
+									else
+										rdata[31:8] <= din[23:0];
+								end
+							endcase
+						end
+
 						3'b100: rdata <=      // LBU
 							addr[1:0] == 2'b00 ? {24'd0, din[7:0]} :
 							addr[1:0] == 2'b01 ? {24'd0, din[15:8]} :
 							addr[1:0] == 2'b10 ? {24'd0, din[23:16]} :
 												 {24'd0, din[31:24]};
-						3'b101: rdata <=      // LHU
-							addr[1] == 1'b0 ? {16'd0, din[15:0]} :
-											  {16'd0, din[31:16]};
+						3'b101:
+							// LHU
+							case (addr[1:0])
+								2'b00: rdata <= {16'd0, din[15: 0]};
+								2'b01: rdata <= {16'd0, din[23: 8]};
+								2'b10: rdata <= {16'd0, din[31:16]};
+								2'b11:
+								begin
+									if (~phase)
+									begin
+										rdata[7:0] <= din[31:24];
+										r1 <= r1 + 3'd4;
+										phase <= 1;
+									end
+									else
+										rdata[31:8] <= {16'd0, din[7:0]};
+								end
+							endcase
 					endcase
 					write_rd <= rd != 5'b00000;
 					valid <= 0;
-					state <= S_IDLE;
+					if (~phase &&
+						((func3 == 3'b001 && addr[1:0] == 2'b11) ||
+						(func3 == 3'b010 && addr[1:0] != 2'b00) ||
+						(func3 == 3'b101 && addr[1:0] == 2'b11)))
+						state <= S_READ;
+					else
+						state <= S_IDLE;
 				end
 			end
 			S_WRITE:
@@ -498,11 +577,34 @@ begin
 							end
 							3'b001:
 							begin
-								lane[0] <= store_addr[1] == 1'b0;
-								lane[1] <= store_addr[1] == 1'b0;
-								lane[2] <= store_addr[1] == 1'b1;
-								lane[3] <= store_addr[1] == 1'b1;
-								dout <= {2{r2[15:0]}};
+								// 16 bit write
+								case (store_addr[1:0])
+									2'b00:
+									begin
+										// Aligned
+										lane <= 4'b0011;
+										dout <= {2{r2[15:0]}};
+									end
+									2'b01:
+									begin
+										lane <= 4'b0110;
+										dout <= {r2[7:0], r2[15:0], r2[15:8]};
+									end
+									2'b10:
+									begin
+										// Aligned
+										lane <= 4'b1100;
+										dout <= {2{r2[15:0]}};
+									end
+									2'b11:
+									begin
+										misaligned <= 1;
+										lane <= 4'b1000;
+										dout <= {r2[7:0], r2[15:0], r2[15:8]};
+										next_lane <= 4'b0001;
+										next_addr <= store_addr + 3'd4;
+									end
+								endcase
 							end
 							3'b010:
 							begin
