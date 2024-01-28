@@ -72,6 +72,9 @@ int main(void)
 	unsigned int start_a = 0, start_b = 0, a, b;
 	unsigned int c_res, asm_res;
 
+	print("\n\n\n");
+
+	print("MULHU test (please wait)\n");
 	for (test = 0; test < 100; test++)
 	{
 		a = start_a;
