@@ -1,0 +1,19 @@
+.con { 
+  font-size: 100%; 
+  font-family: courier, courier new, serif; 
+  background-color: #333;
+  color: #eee;
+}
+
+.link { 
+  font-size: 100%; 
+  font-family: courier, courier new, serif; 
+  background-color: #eee;
+  padding:10px;
+}
+
+input[type=button] {
+  cursor:pointer;
+  padding:10px;
+  font-size:16px;
+}

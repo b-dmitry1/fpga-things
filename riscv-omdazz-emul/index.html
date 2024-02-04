@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="cache-control" content="no-cache" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link rel="stylesheet" type="text/css" href="style.css" />
+
+  <script src='system.js'></script>
+  <script src='decoder.js'></script>
+  <script src='riscv.js'></script>
+  <script src='alu.js'></script>
+  <script src='branch.js'></script>
+  <script src='loadstore.js'></script>
+  <script src='periph/uart.js'></script>
+  <script src='periph/ram.js'></script>
+  <script src='textcon.js'></script>
+  <script src='periph/ledtube.js'></script>
+
+</head>
+
+<body bgcolor='#555'>
+
+<!-- -------------------------------------------------------------
+UI
+-------------------------------------------------------------- -->
+  <p>Demos: 
+  <input type="button" value='ledtube' onclick="firmware('ledtube.dat');"></input>
+  <input type="button" value='sprintf' onclick="firmware('sprintf.dat');"></input>
+  <p>Tests: 
+  <input type="button" value='shifts' onclick="firmware('shifts.dat');"></input>
+
+  <p>
+  <input type="button" value='run' onclick="run();"></input>
+  <input type="button" value='stop' onclick="stop();"></input>
+  <input type="button" value='reset' onclick="reset();"></input>
+
+  <p>
+  <div class='con' id='textcon'></div>
+
+  <p>
+  <canvas id='ledtube' width='320' height='120'></canvas>
+
+<!-- -------------------------------------------------------------
+Emulator
+-------------------------------------------------------------- -->
+
+  <script>
+
+  let sys = new RiscvSystem();
+
+  // Map RAM and devices
+  sys.mapDevice(0x00, new Ram(1048576));
+  sys.mapDevice(0x10, new Uart());
+  sys.mapDevice(0x14, new LedTube());
+  sys.mapDevice(0x80, new Ram(8388608));
+
+  let cpu = new Riscv(sys);
+  let running = false;
+  let do_reset = true;
+  let current_firmware = "firmware.dat";
+  let load_firmware = "firmware.dat";
+
+  cpu.load("prebuilt/firmware.dat");
+
+  // Text console
+  let con = new textcon();
+                        
+  // CPU control
+  function run() { running = true; }
+  function stop() { running = false; }
+  function reset() { running = false; do_reset = true; }
+  function firmware(name) { load_firmware = name; running = true; do_reset = true; }
+
+  let busy = false;
+  function step() {
+    if (load_firmware != current_firmware) {
+      cpu.load('prebuilt/' + load_firmware);
+      current_firmware = load_firmware;
+    }
+    if (do_reset) {
+      do_reset = false;
+      cpu.reset();
+    }
+    if (running) {
+      for (i = 0; i < 1000; i++)
+        cpu.step();
+    }
+    setTimeout(() => step(), 50);
+  }
+
+  setTimeout(() => step(), 100);
+
+  function putchar(ch) {
+    con.putchar(ch);
+  }
+
+  </script>
+
+  <p><div class='link'><a href='https://github.com/b-dmitry1/fpga-things/'>https://github.com/b-dmitry1/fpga-things/</a></div>
+
+</body>
+</html>
