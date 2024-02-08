@@ -4,6 +4,13 @@ function bits(value, start, n) {
 	return value & 0xFFFFFFFF;
 }
 
+function uint(value) {
+	value &= 0xFFFFFFFF;
+	if (value < 0)
+		value += 0x100000000;
+	return value;
+}
+
 RiscvDecoder = function() {
 	this.instr  = 0;
 	this.opcode = 0;

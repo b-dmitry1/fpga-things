@@ -26,7 +26,6 @@ Riscv = function(sys) {
 	// Execute 1 next instruction
 	this.step = function() {
 		if (!this.ready) return;
-		this.r[0] = 0;
 
 		// Fetch next instruction
 		this.fetch();
@@ -103,7 +102,7 @@ Riscv = function(sys) {
 	this.dec = new RiscvDecoder();
 
 	this.set_pc = function(value) {
-		this.pc = value & 0xFFFFFFFF;
+		this.pc = uint(value);
 	};
 
 	this.get_reg = function(n) {
@@ -113,7 +112,7 @@ Riscv = function(sys) {
 	this.set_rd = function(v) {
 		n = this.dec.rd & 0x1F;
 		if (n != 0)
-			this.r[n] = v & 0xFFFFFFFF;
+			this.r[n] = uint(v);
 	};
 
 	this.fetch = function() {

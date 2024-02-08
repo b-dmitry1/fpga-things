@@ -4,6 +4,8 @@ Ram = function(size) {
 	this.ram = new Uint32Array(size >> 2);
 	this.addrMask = (size - 1) & 0xFFFFFFFF;
 
+	this.getRam = () => this.ram;
+
 	this.read8 = function(addr) {
 		let rv = this.ram[(addr & this.addrMask) >> 2];
 		switch (addr & 0x03) {

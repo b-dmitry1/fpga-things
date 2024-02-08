@@ -15,6 +15,8 @@
   <script src='periph/ram.js'></script>
   <script src='textcon.js'></script>
   <script src='periph/ledtube.js'></script>
+  <script src='periph/vdu.js'></script>
+  <script src='periph/gpio.js'></script>
 
 </head>
 
@@ -26,6 +28,8 @@ UI
   <p>Demos: 
   <input type="button" value='ledtube' onclick="firmware('ledtube.dat');"></input>
   <input type="button" value='sprintf' onclick="firmware('sprintf.dat');"></input>
+  <input type="button" value='tetris' onclick="firmware('tetris.dat');"></input>
+  <input type="button" value='vgatest' onclick="firmware('vgatest.dat');"></input>
   <p>Tests: 
   <input type="button" value='shifts' onclick="firmware('shifts.dat');"></input>
 
@@ -40,6 +44,9 @@ UI
   <p>
   <canvas id='ledtube' width='320' height='120'></canvas>
 
+  <p>
+  <canvas id='display' width='640' height='480'></canvas>
+
 <!-- -------------------------------------------------------------
 Emulator
 -------------------------------------------------------------- -->
@@ -51,6 +58,8 @@ Emulator
   // Map RAM and devices
   sys.mapDevice(0x00, new Ram(1048576));
   sys.mapDevice(0x10, new Uart());
+  sys.mapDevice(0x12, new Vdu());
+  sys.mapDevice(0x13, new Gpio());
   sys.mapDevice(0x14, new LedTube());
   sys.mapDevice(0x80, new Ram(8388608));
 
@@ -82,13 +91,13 @@ Emulator
       cpu.reset();
     }
     if (running) {
-      for (i = 0; i < 1000; i++)
+      for (i = 0; i < 50000; i++)
         cpu.step();
     }
-    setTimeout(() => step(), 50);
+    setTimeout(() => step(), 20);
   }
 
-  setTimeout(() => step(), 100);
+  setTimeout(() => step(), 1000);
 
   function putchar(ch) {
     con.putchar(ch);

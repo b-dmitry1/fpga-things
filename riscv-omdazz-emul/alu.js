@@ -3,6 +3,11 @@ Riscv.prototype.do_alu = function(func7, func3, opcode, r1, r2) {
 		switch (func3) {
 			case 0:
 				return r1 * r2;
+			case 3:
+				let mulhu = r1 * r2;
+				mulhu /= 65536;
+				mulhu /= 65536;
+				return uint(mulhu);
 			case 4: // DIV
 				r1s = r1 & 0x80000000 ? -((r1 ^ 0xFFFFFFFF) + 1) : r1;
 				r2s = r2 & 0x80000000 ? -((r2 ^ 0xFFFFFFFF) + 1) : r2;
@@ -24,7 +29,7 @@ Riscv.prototype.do_alu = function(func7, func3, opcode, r1, r2) {
 			case 0:
 				if (opcode == 0x33 && func7 == 0x20)
 					return (r1 - r2) & 0xFFFFFFFF; // SUB
-				return (r1 + r2) & 0xFFFFFFFF; // ADD
+				return r1 + r2; // ADD
 			case 1: // SLL
 				return r1 << (r2 & 0x1F);
 			case 2: // SLT
