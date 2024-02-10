@@ -30,17 +30,33 @@ RiscvSystem = function() {
 		return 0;
 	};
 
-	this.read32 = function(addr) {
+	this.read16 = function(addr) {
 		addr &= 0xFFFFFFFF;
 		let index = (addr >> 24) & 0xFF;
 		let dev = this.devices[index];
 		if (dev != 0)
-			return dev.read32(addr);
+			return dev.read8(addr) | (dev.read8(addr + 1) << 8);
+		return 0;
+	};
+
+	this.read32 = function(addr) {
+		addr &= 0xFFFFFFFF;
+		let index = (addr >> 24) & 0xFF;
+		let dev = this.devices[index];
+		if (dev != 0) {
+			if ((addr & 3) == 0)
+				return dev.read32(addr);
+			return dev.read8(addr) |
+				(dev.read8(addr + 1) << 8) |
+				(dev.read8(addr + 2) << 16) |
+				(dev.read8(addr + 3) << 24);
+		}
 		return 0;
 	};
 
 	this.write8 = function(addr, value) {
 		addr &= 0xFFFFFFFF;
+		value = uint(value);
 		value &= 0xFF;
 		let index = (addr >> 24) & 0xFF;
 		let dev = this.devices[index];
@@ -50,6 +66,7 @@ RiscvSystem = function() {
 
 	this.write16 = function(addr, value) {
 		addr &= 0xFFFFFFFF;
+		value = uint(value);
 		value &= 0xFFFF;
 		let index = (addr >> 24) & 0xFF;
 		let dev = this.devices[index];
@@ -61,10 +78,18 @@ RiscvSystem = function() {
 
 	this.write32 = function(addr, value) {
 		addr &= 0xFFFFFFFF;
-		value &= 0xFFFFFFFF;
+		value = uint(value);
 		let index = (addr >> 24) & 0xFF;
 		let dev = this.devices[index];
-		if (dev != 0)
-			dev.write32(addr, value);
+		if (dev != 0) {
+			if ((addr & 0x03) == 0) {
+				dev.write32(addr, value);
+			} else {
+				dev.write8(addr, value & 0xFF);
+				dev.write8(addr + 1, (value >> 8) & 0xFF);
+				dev.write8(addr + 2, (value >> 16) & 0xFF);
+				dev.write8(addr + 3, (value >> 24) & 0xFF);
+			}
+		}
 	};
 };

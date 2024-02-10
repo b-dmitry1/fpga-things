@@ -11,12 +11,15 @@
   <script src='alu.js'></script>
   <script src='branch.js'></script>
   <script src='loadstore.js'></script>
+  <script src='csr.js'></script>
+  <script src='atomic.js'></script>
   <script src='periph/uart.js'></script>
   <script src='periph/ram.js'></script>
   <script src='textcon.js'></script>
   <script src='periph/ledtube.js'></script>
   <script src='periph/vdu.js'></script>
   <script src='periph/gpio.js'></script>
+  <script src='periph/timer.js'></script>
 
 </head>
 
@@ -30,6 +33,7 @@ UI
   <input type="button" value='sprintf' onclick="firmware('sprintf.dat');"></input>
   <input type="button" value='tetris' onclick="firmware('tetris.dat');"></input>
   <input type="button" value='vgatest' onclick="firmware('vgatest.dat');"></input>
+  <input type="button" value='Linux' onclick="firmware('linux');"></input>
   <p>Tests: 
   <input type="button" value='shifts' onclick="firmware('shifts.dat');"></input>
 
@@ -58,6 +62,7 @@ Emulator
   // Map RAM and devices
   sys.mapDevice(0x00, new Ram(1048576));
   sys.mapDevice(0x10, new Uart());
+  sys.mapDevice(0x11, new Timer());
   sys.mapDevice(0x12, new Vdu());
   sys.mapDevice(0x13, new Gpio());
   sys.mapDevice(0x14, new LedTube());
@@ -69,7 +74,7 @@ Emulator
   let current_firmware = "firmware.dat";
   let load_firmware = "firmware.dat";
 
-  cpu.load("prebuilt/firmware.dat");
+  cpu.load("prebuilt/firmware.dat", 0);
 
   // Text console
   let con = new textcon();
@@ -78,23 +83,35 @@ Emulator
   function run() { running = true; }
   function stop() { running = false; }
   function reset() { running = false; do_reset = true; }
-  function firmware(name) { load_firmware = name; running = true; do_reset = true; }
+  function firmware(name) {
+    load_firmware = name;
+    cpu.start = name == "linux" ? 0x80000000 : 0;
+    running = true;
+    do_reset = true;
+  }
 
   let busy = false;
   function step() {
     if (load_firmware != current_firmware) {
-      cpu.load('prebuilt/' + load_firmware);
+      if (load_firmware == "linux") {
+        cpu.load("prebuilt/kernel.dat", 0x80000000);
+        cpu.load("prebuilt/fdt.dat", 0x807F0000);
+      } else {
+        cpu.load('prebuilt/' + load_firmware);
+      }
       current_firmware = load_firmware;
     }
     if (do_reset) {
       do_reset = false;
       cpu.reset();
     }
-    if (running) {
+    if (running && !cpu.wfi) {
       for (i = 0; i < 50000; i++)
         cpu.step();
+      // cpu.dump();
     }
-    setTimeout(() => step(), 20);
+    cpu.tick(34567);
+    setTimeout(() => step(), 100);
   }
 
   setTimeout(() => step(), 1000);

@@ -19,6 +19,7 @@ RiscvDecoder = function() {
 	this.rs2    = 0;
 	this.func3  = 0;
 	this.func7  = 0;
+	this.csr    = 0;
 	this.u_imm  = 0;
 	this.i_imm  = 0;
 	this.b_imm  = 0;
@@ -35,6 +36,7 @@ RiscvDecoder = function() {
 	this.is_store   = 0;
 	this.is_alu     = 0;
 	this.is_control = 0;
+	this.is_atomic  = 0;
 	this.is_r2      = 0;
 
 	this.decode = function(instr) {
@@ -45,16 +47,7 @@ RiscvDecoder = function() {
 		this.rs2    = (instr >> 20) & 0x1F;
 		this.func3  = (instr >> 12) & 0x07;
 		this.func7  = (instr >> 25) & 0x7F;
-
-		this.is_lui     = this.opcode == 0x37;
-		this.is_auipc   = this.opcode == 0x17;
-		this.is_jal     = this.opcode == 0x6F;
-		this.is_jalr    = this.opcode == 0x67;
-		this.is_branch  = this.opcode == 0x63;
-		this.is_load    = this.opcode == 0x03;
-		this.is_store   = this.opcode == 0x23;
-		this.is_alu     = (this.opcode & 0x5F) == 0x13;
-		this.is_control = this.opcode == 0x73;
+		this.csr    = (instr >> 20) & 0xFFF;
 		this.is_r2      = (this.opcode & 0x20) != 0;
 	};
 
