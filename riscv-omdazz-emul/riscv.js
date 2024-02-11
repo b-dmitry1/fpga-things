@@ -24,10 +24,11 @@ Riscv = function(sys) {
 			this.r[i] = 0;
 		this.pc = this.start;
 		this.r[10] = 0;
-		this.r[11] = 0x807F0000;
+		this.r[11] = 0x80FF0000;
 
 		this.mmode    = 3;
 		this.trap     = false;
+		this.wfi      = false;
 
 		this.mstatus  = 0;
 		this.mie      = 0;
@@ -102,8 +103,9 @@ Riscv = function(sys) {
 		if ((this.mip & this.mie & (1 << 7)) && (this.mstatus & (1 << 3))) {
 			this.trap = true;
 			this.trap_code = 0x80000007;
-			this.wfi = false;
 		}
+
+		this.wfi = false;
 	};
 
 	//////////////////////////////////////////////////////////////////////////////

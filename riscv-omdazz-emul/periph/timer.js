@@ -23,14 +23,14 @@ Timer = function() {
 				temp = this.mtimecmp;
 				temp /= 65536;
 				temp /= 65536;
-				return temp;
+				return uint(temp);
 			case 0xBFF8:
 				return this.mtime & 0xFFFFFFFF;
 			case 0xBFFC:
 				let temp = this.mtime;
 				temp /= 65536;
 				temp /= 65536;
-				return temp;
+				return uint(temp);
 		}
 		return 0;
 	};
@@ -44,7 +44,8 @@ Timer = function() {
 				temp *= 65536;
 				temp *= 65536;
 				temp |= value & 0xFFFFFFFF;
-				this.mtimecmp = temp;
+//				console.log('timer: ' + value);
+				this.mtimecmp = value;//temp;
 				break;
 			case 0x4004:
 				temp = this.mtimecmp;

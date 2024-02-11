@@ -1,8 +1,31 @@
 Uart = function() {
+	this.buffer = [];
+
+	this.addKey = function(key) {
+		let code = 0;
+		switch (key) {
+			case 'Enter': code = 10; break;
+			case ' ': code = 32; break;
+			case 'Escape': code = 27; break;
+			case 'Backspace': code = 8; break;
+			default:
+				code = key.charCodeAt(0);
+				break;
+		}
+		if (code != 0)
+			this.buffer.push(code);
+	};
+
+	this.removeChar = function() {
+		return this.buffer.shift();
+	};
+
 	this.read8 = function(addr) {
 		switch (addr & 7) {
+			case 0:
+				return this.buffer.length > 0 ? this.removeChar() : 0x00;
 			case 5:
-				return 0x60;
+				return this.buffer.length > 0 ? 0x61 : 0x60;
 		}
 		return 0;
 	};

@@ -66,7 +66,7 @@ Emulator
   sys.mapDevice(0x12, new Vdu());
   sys.mapDevice(0x13, new Gpio());
   sys.mapDevice(0x14, new LedTube());
-  sys.mapDevice(0x80, new Ram(8388608));
+  sys.mapDevice(0x80, new Ram(16777216));
 
   let cpu = new Riscv(sys);
   let running = false;
@@ -95,7 +95,7 @@ Emulator
     if (load_firmware != current_firmware) {
       if (load_firmware == "linux") {
         cpu.load("prebuilt/kernel.dat", 0x80000000);
-        cpu.load("prebuilt/fdt.dat", 0x807F0000);
+        cpu.load("prebuilt/fdt.dat", 0x80FF0000);
       } else {
         cpu.load('prebuilt/' + load_firmware);
       }
@@ -105,13 +105,14 @@ Emulator
       do_reset = false;
       cpu.reset();
     }
-    if (running && !cpu.wfi) {
-      for (i = 0; i < 50000; i++)
-        cpu.step();
-      // cpu.dump();
+    if (running) {
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 5000; j++)
+          cpu.step();
+        cpu.tick(500);
+      }
     }
-    cpu.tick(34567);
-    setTimeout(() => step(), 100);
+    setTimeout(() => step(), 50);
   }
 
   setTimeout(() => step(), 1000);
@@ -119,6 +120,15 @@ Emulator
   function putchar(ch) {
     con.putchar(ch);
   }
+
+
+  document.addEventListener('keydown', function(event) {
+    let uart = sys.getDevice(0x10);
+    if ("function" == typeof uart.addKey)
+      uart.addKey(event.key);
+    if (event.key != "F5")
+      event.preventDefault();
+  });
 
   </script>
 
