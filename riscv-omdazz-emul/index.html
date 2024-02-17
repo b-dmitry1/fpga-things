@@ -16,6 +16,7 @@
   <script src='periph/uart.js'></script>
   <script src='periph/ram.js'></script>
   <script src='textcon.js'></script>
+  <script src='keyb.js'></script>
   <script src='periph/ledtube.js'></script>
   <script src='periph/vdu.js'></script>
   <script src='periph/gpio.js'></script>
@@ -44,6 +45,7 @@ UI
 
   <p>
   <div class='con' id='textcon'></div>
+  <div id='keyb'></div>
 
   <p>
   <canvas id='ledtube' width='320' height='120'></canvas>
@@ -129,6 +131,8 @@ Emulator
     if (event.key != "F5")
       event.preventDefault();
   });
+
+  createKeyboard();
 
   </script>
 

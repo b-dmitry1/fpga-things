@@ -4,6 +4,7 @@ textcon = function() {
 	this.x = 0;
 	this.y = 0;
 	this.text = [];
+	this.escape = [];
 
 	// Create buffer and HTML lines
 	let container = document.getElementById('textcon');
@@ -33,7 +34,38 @@ textcon = function() {
 		this.text[this.height - 1] = ' '.repeat(this.width - 1);
 	};
 
+	this.doBackspace = function(con) {
+		let line = con.text[con.y];
+		if (line.length > 0)
+			con.text[con.y] = line.substring(0, line.length - 1);
+		if (con.x > 0)
+			con.x--;
+		con.updateLine(con.y);
+	};
+
+	this.doEscape = function() {
+		switch (this.escape) {
+			case '\x1b[J':
+				this.doBackspace(this);
+				this.escape = '';
+				return;
+		}
+
+		if (this.escape.length > 5)
+			this.escape = '';
+	};
+
 	this.putchar = function(ch) {
+		if (ch == '\x1b') {
+			this.doEscape();
+			this.escape = '\x1b';
+			return;
+		}
+		if (this.escape.length > 0) {
+			this.escape += ch;
+			this.doEscape();
+			return;
+		}
 		if (ch == '\r') {
 			this.x = 0;
 		} else if (ch == '\n') {
