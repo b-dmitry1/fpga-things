@@ -36,14 +36,14 @@ textcon = function() {
 
 	this.doBackspace = function(con) {
 		let line = con.text[con.y];
-		if (line.length > 0)
-			con.text[con.y] = line.substring(0, line.length - 1);
 		if (con.x > 0)
 			con.x--;
+		if (line.length > 0)
+			con.text[con.y] = line.substring(0, con.x) + line.substring(con.x + 1);
 		con.updateLine(con.y);
 	};
 
-	this.doEscape = function() {
+	this.doEscape = function(last) {
 		switch (this.escape) {
 			case '\x1b[J':
 				this.doBackspace(this);
@@ -51,19 +51,27 @@ textcon = function() {
 				return;
 		}
 
-		if (this.escape.length > 5)
+		if (last == 'm') {
+			this.escape = '';
+		}
+
+		if (this.escape.length > 10)
 			this.escape = '';
 	};
 
 	this.putchar = function(ch) {
+		if (ch == '\b') {
+			this.escape = '';
+			return;
+		}
 		if (ch == '\x1b') {
-			this.doEscape();
+			this.doEscape(ch);
 			this.escape = '\x1b';
 			return;
 		}
 		if (this.escape.length > 0) {
 			this.escape += ch;
-			this.doEscape();
+			this.doEscape(ch);
 			return;
 		}
 		if (ch == '\r') {
@@ -92,7 +100,7 @@ textcon = function() {
 			} else if (this.x == 0) {
 				line = ch + line.slice(1);
 			} else {
-				line = line.slice(0, this.x) + ch + line.slice(this.x);
+				line = line.substring(0, this.x) + ch + line.substring(this.x + 1);
 			}
 			this.text[this.y] = line;
 			this.x++;

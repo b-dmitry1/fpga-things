@@ -7,7 +7,10 @@ Uart = function() {
 			case 'Enter': code = 10; break;
 			case ' ': code = 32; break;
 			case 'Escape': code = 27; break;
-			case 'Backspace': code = 8; break;
+			case 'Backspace': code = 127; break;
+			case 'Control': code = 0; break;
+			case 'Alt': code = 0; break;
+			case 'Shift': code = 0; break;
 			default:
 				code = key.charCodeAt(0);
 				break;
