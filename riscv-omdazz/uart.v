@@ -5,6 +5,7 @@ module uart
 	input wire [ 2:0] addr,
 	input wire [31:0] din,
 	output reg [31:0] dout,
+	input wire [ 3:0] lane,
 	input wire        wr,
 	input wire        valid,
 	
@@ -21,6 +22,9 @@ localparam
 reg [11:0] tdiv;
 reg [1:0]  tstate;
 reg [9:0]  tdata;
+
+reg [31:0] regs1;
+reg [31:0] regs2;
 
 always @(posedge clk)
 begin
@@ -41,7 +45,7 @@ begin
 	case (tstate)
 		S_IDLE:
 		begin
-			if (valid && wr)
+			if (valid && wr && ~addr[2] && lane[0])
 			begin
 				tdata <= {1'b1, din[7:0], 1'b0};
 				tstate <= S_TRANSMIT;

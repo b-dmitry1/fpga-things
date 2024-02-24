@@ -112,6 +112,7 @@ uart i_uart
 	.addr  (addr),
 	.din   (din),
 	.dout  (uart_dout),
+	.lane  (lane),
 	.wr    (wr),
 	.valid (valid && uart_area),
 	.txd   (txd)
@@ -144,9 +145,9 @@ spi i_spi
 
 reg [63:0] mtime;
 reg [63:0] mtimecmp;
-reg [ 5:0] timer_div;
+reg [ 7:0] timer_div;
 reg [31:0] timer_dout;
-wire       timer_irq = (mtimecmp[31:0] != 32'd0) && (mtime[31:0] > mtimecmp[31:0]);
+wire       timer_irq = (mtimecmp[31:0] != 32'd0) && (mtime[63:0] > mtimecmp[63:0]);
 always @(posedge clk or negedge rst_n)
 begin
 	if (~rst_n)
@@ -157,13 +158,19 @@ begin
 	else
 	begin
 		// Increment every 1 us
-		timer_div <= timer_div == 6'd49 ? 5'd0 : timer_div + 1'd1;
-		mtime     <= timer_div == 6'd49 ? mtime + 32'd1 : mtime;
+		timer_div <= timer_div == 8'd49 ? 5'd0 : timer_div + 1'd1;
 
 		if (valid && wr && timer_area && addr[15:0] == 16'h4000)
 			mtimecmp[31: 0] <= din;
 		if (valid && wr && timer_area && addr[15:0] == 16'h4004)
 			mtimecmp[63:32] <= din;
+
+		if (valid && wr && timer_area && addr[15:0] == 16'hBFF8)
+			mtime[31: 0] <= din;
+		else if (valid && wr && timer_area && addr[15:0] == 16'hBFFC)
+			mtime[63:32] <= din;
+		else
+			mtime        <= timer_div == 8'd49 ? mtime + 32'd1 : mtime;
 
 		case (addr[3:2])
 			2'b00: timer_dout <= mtimecmp[31: 0];

@@ -1,6 +1,6 @@
 # RISC-V for OMDAZZ board
 
-A very simple RISC-V (32 bit, IM) CPU for OMDAZZ board. Able to run small C programs.
+A very simple RISC-V (32 bit, IM) CPU for OMDAZZ board. Able to run Linux.
 
 Execution time:
 * Most instructions in 4 cycles (+ROM delay).
@@ -16,6 +16,22 @@ Peripherial devices:
 * SPI
 * Upcounting timer
 * Buttons, LEDs, 7-segment display
+
+## Running Linux
+
+The OMDAZZ board have only 8 megabytes of SDRAM so the Busybox program will not work properly. Only small demo programs can be run by OS.
+
+* Connect SD-card adapter as shown on a picture below.
+* Format a new SD-card with MBR partition table and FAT32 file system.
+* From "linux" directory copy "Image" and "fdt" files to SD-card's root directory.
+* Insert SD-card and connect RS232 cable.
+* Compile the project and configure FPGA.
+* Compile and run "demos/sdcard_boot" program. The "sdcard_boot" program will load devicetree and kernel files to SDRAM and then launch Linux kernel.
+
+To build your own Linux kernel use ".config" file from linux directory. Minimal hvc driver (drivers/tty/hvc) is also provided.
+It is used instead of standard 8250 to speedup boot process a little and save a few kilobytes.
+
+If you want to test the same Linux kernel with 16 or more megabytes of RAM right in your browser please check out "riscv-omdazz-emul" project.
 
 ## Building / testing on a Windows machine
 

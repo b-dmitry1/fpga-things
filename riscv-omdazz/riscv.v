@@ -126,6 +126,7 @@ wire is_ecall  = opcode == 5'b11100 && func3 == 3'd0 && csr[2:0] == 3'b000;
 wire is_ebreak = opcode == 5'b11100 && func3 == 3'd0 && csr[2:0] == 3'b001;
 wire is_mret   = opcode == 5'b11100 && func3 == 3'd0 && csr[2:0] == 3'b010;
 wire is_wfi    = opcode == 5'b11100 && func3 == 3'd0 && csr[2:0] == 3'b101;
+wire is_fence  = opcode == 5'b00011;
 
 //////////////////////////////////////////////////////////////////////////////
 // ALU
@@ -240,6 +241,10 @@ mul32 i_mul32
 	.ready      (mul_ready)
 );
 
+reg [63:0] imul_res;
+always @(posedge clk)
+	imul_res <= r1 * r2;
+
 //////////////////////////////////////////////////////////////////////////////
 // DIV / REM
 //////////////////////////////////////////////////////////////////////////////
@@ -327,9 +332,11 @@ begin
 				// Interrupt or fault reaction
 				if (trap)
 				begin
+					wfi <= 0;
+
 					mmode   <= 1;
 					mcause  <= trap_code;
-					mtval   <= 32'd0;
+					mtval   <= trap_code[31] ? 32'd0 : pc;
 
 					pc      <= mtvec;
 					mstatus <= {19'b0, mmode, mmode, 3'b000, mstatus[3], 3'b000, 1'b0, 3'b000};
@@ -416,6 +423,12 @@ begin
 					end
 				endcase
 
+				if (is_ecall)
+				begin
+					trap      <= 1;
+					trap_code <= 32'h8;
+				end
+
 				if (is_mret)
 				begin
 					pc      <= mepc;
@@ -425,7 +438,7 @@ begin
 
 				if (is_wfi)
 				begin
-					wfi        <= 1;
+					wfi        <= 0;
 					mstatus[3] <= 1;
 				end
 
@@ -684,7 +697,7 @@ begin
 				mul_valid <= 1;
 				if (mul_ready)
 				begin
-					result_mul <= func3[1:0] != 2'b00 ? mul_q[63:32] : mul_q[31:0];
+					result_mul <= func3[1:0] != 2'b00 ? imul_res[63:32]/*mul_q[63:32]*/ : imul_res[31:0]; //mul_q[31:0];
 					mul_valid <= 0;
 					state <= S_MUL2;
 				end
