@@ -27,6 +27,17 @@ Tested with:
 
 Work is in progress. My goal is to build RISC-V Linux system.
 
+### Choosing SDRAM
+
+Most PC-100 and PC-133 168-pin DIMMs will be okay.
+
+* 8 chips 6408: 9 cols, 12 rows, 2 ba, chip data width = 8, total size = 64M.
+* 4 chips 5616: 9 cols, 13 rows, 2 ba, chip data width = 16, total size = 128M.
+* 8 chips 5616: 9 cols, 13 rows, 2 ba, chip data width = 16, total size = 256M.
+* 16 chips 5616: 9 cols, 13 rows, 2 ba, chip data width = 16, total size = 512M.
+
+To find out your module parameters consult to IC's datasheet. Column/row sizes are usually described in a "pin function description" chapter.
+
 ### BMC
 
 Baseboard management controller (BMC) is optional and is used to:
